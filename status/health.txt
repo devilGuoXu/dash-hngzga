@@ -1,6 +1,0 @@
-rows=440 aff=56 aff_first=2026-11-21 08:56:25 aff_last=2026-11-21 14:54:18
-data_mtime=2026-11-22 04:01:03
-api_last=2026-11-22 04:01:02 ops=539
-pythonw_count=16
-checked_at=2026-11-22 04:01:04
-token=yes
