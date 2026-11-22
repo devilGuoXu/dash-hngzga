@@ -239,8 +239,8 @@
         // 使用 window 对象确保全局可访问
         window.MAPPED_OFFERS = ["Ziro-2 5 SpicyQuote", "NexRidg-7 42-AutoQuoteZone", "Stellar-2 228 - CheapCarSecure", "Stellar-2 257 GoHomeCoverage", "LA-30 452 TurboSavingsAuto", "B452-4 2118 RP - Quote Wizard Home", "B452-4 2182 QW Home - Meta", "B452-4 2210 C - QW AUTO", "B452-4 2346 C - Smarter Auto", "B452-4 2369 1UP - Quote Blizzard", "B452-4 2391 D - Quote Wizard Auto", "B452-4 2411 LN - Nerd Wallet Auto", "B452-4 2412 LN - QW Auto", "B452-4 2413 LN - QW Home", "B452-4 2428 SA - Nerdwallet Auto", "B452-4 2435 FI - Liberty Mutual Auto", "B452-4 2436 LN - QS auto", "B452-4 2440 RP - RP O&O", "B452-4 2441 LN - Fast Auto Quote", "B452-4 2454 D - EZ Auto", "BW-165 (2518) Qualityautoquote", "Ashnova-128 [3683] NerdWallet Auto Insurance", "SparkleMob-1839 (34913)Financebuzz-home insurance", "Affiliati-15378 (42598) NerdWallet Auto", "Adscent-52 (611178)239-Financebuzz-Home", "Datewave-2 710641 NetAutoQuotes", "Adscent-52 (1663897)229-BudgetAutoQuotes", "Datewave-Kissterra 1666 TurboSavingsAuto"];
         window.OFFER_TARGETS = {"B452-4 2454 D - EZ Auto": 75, "Adscent-52 (1663897)229-BudgetAutoQuotes": 150, "Adscent-52 (611178)239-Financebuzz-Home": 100, "Affiliati-15378 (42598) NerdWallet Auto": 80, "Ashnova-128 [3683] NerdWallet Auto Insurance": 150, "B452-4 2118 RP - Quote Wizard Home": 80, "B452-4 2182 QW Home - Meta": 50, "B452-4 2210 C - QW AUTO": 200, "B452-4 2346 C - Smarter Auto": 150, "B452-4 2369 1UP - Quote Blizzard": 30, "B452-4 2391 D - Quote Wizard Auto": 100, "B452-4 2411 LN - Nerd Wallet Auto": 30, "B452-4 2412 LN - QW Auto": 100, "B452-4 2413 LN - QW Home": 80, "B452-4 2428 SA - Nerdwallet Auto": 150, "B452-4 2435 FI - Liberty Mutual Auto": 30, "B452-4 2436 LN - QS auto": 75, "B452-4 2440 RP - RP O&O": 50, "B452-4 2441 LN - Fast Auto Quote": 100, "BW-165 (2518) Qualityautoquote": 150, "Datewave-2 710641 NetAutoQuotes": 300, "Datewave-Kissterra 1666 TurboSavingsAuto": 0, "LA-30 452 TurboSavingsAuto": 200, "NexRidg-7 42-AutoQuoteZone": 2000, "SparkleMob-1839 (34913)Financebuzz-home insurance": 50, "Stellar-2 228 - CheapCarSecure": 250, "Stellar-2 257 GoHomeCoverage": 0, "Ziro-2 5 SpicyQuote": 200, "default": 9999};
-        window.PERSON_OPS = {"Ashnova-128 [3683] NerdWallet Auto Insurance": {"陈帅": 8, "陈仕荣": 17}, "B452-4 2440 RP - RP O&O": {"李铜": 8}, "B452-4 2412 LN - QW Auto": {"钟奕": 14}, "B452-4 2441 LN - Fast Auto Quote": {"陈虹佑": 10}, "B452-4 2428 SA - Nerdwallet Auto": {"成昭旭1": 8}, "B452-4 2369 1UP - Quote Blizzard": {"郑义程": 4}, "Affiliati-15378 (42598) NerdWallet Auto": {"陈虹佑": 5}};
-        window.TOTAL_OPS = 74;
+        window.PERSON_OPS = {"Ashnova-128 [3683] NerdWallet Auto Insurance": {"陈帅": 8, "陈仕荣": 18}, "B452-4 2440 RP - RP O&O": {"李铜": 8}, "B452-4 2412 LN - QW Auto": {"钟奕": 16}, "B452-4 2441 LN - Fast Auto Quote": {"陈虹佑": 10}, "B452-4 2428 SA - Nerdwallet Auto": {"成昭旭1": 8}, "B452-4 2369 1UP - Quote Blizzard": {"郑义程": 4}, "Affiliati-15378 (42598) NerdWallet Auto": {"陈虹佑": 5}};
+        window.TOTAL_OPS = 77;
         window.API_LAST_TIME = "未获取";
         
         console.log('[Dashboard] ========== 数据加载 ==========');
@@ -1570,6 +1570,92 @@
                 .catch(function () {});
         }
 
+
+        // ===== 买量数据转化 =====
+        var _allRawData = [];
+        var _buyStats = null, _buyStatsAt = 0, _buyFilter = '全部';
+        var BUY_TEMPLATES = [
+            {code:'FORM_auto', label:'车险', color:'#12a05c'},
+            {code:'FORM_home', label:'房险', color:'#2563eb'},
+            {code:'facebook_auto', label:'FB 车险', color:'#8b5cf6'}
+        ];
+        function loadBuyStats(force) {
+            var now = Date.now();
+            if (!force && _buyStats && now - _buyStatsAt < 120000) return;
+            fetch('template_stats.json?t=' + now)
+                .then(function(r){ return r.ok ? r.json() : null; })
+                .then(function(j){ if (j) { _buyStats = j; _buyStatsAt = now; renderBuyConv(); } })
+                .catch(function(){});
+        }
+        function buyTplOps(code) {
+            if (!_buyStats) return 0;
+            var arr = _buyStats.templates || [];
+            for (var i = 0; i < arr.length; i++) if (arr[i].code === code) return arr[i].total_ops || 0;
+            return 0;
+        }
+        function escBuy(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+        function setBuyFilter(f, el) {
+            _buyFilter = f;
+            var pills = document.querySelectorAll('#page8 .bc-pill');
+            for (var i = 0; i < pills.length; i++) pills[i].classList.remove('on');
+            if (el) el.classList.add('on');
+            renderBuyConv();
+        }
+        function renderBuyConv() {
+            var rows = _allRawData || [];
+            var byOffer = {}, tplAgg = {}, opsByOffer = {};
+            for (var i = 0; i < rows.length; i++) {
+                var r = rows[i], tpl = String(r.template || '');
+                if (!tpl) continue;
+                var o = String(r.offer || '').trim();
+                var p = parseFloat(String(r['价格'] || '0').replace(/[$,]/g, '')) || 0;
+                if (!byOffer[o]) byOffer[o] = {offer:o, conv:0, amount:0, tpls:{}};
+                byOffer[o].conv += 1; byOffer[o].amount += p; byOffer[o].tpls[tpl] = 1;
+                if (!tplAgg[tpl]) tplAgg[tpl] = {conv:0, amount:0, offers:{}};
+                tplAgg[tpl].conv += 1; tplAgg[tpl].amount += p; tplAgg[tpl].offers[o] = 1;
+            }
+            if (_buyStats) {
+                (_buyStats.templates || []).forEach(function(t){
+                    var offs = t.offers || {};
+                    Object.keys(offs).forEach(function(o){
+                        opsByOffer[o] = (opsByOffer[o] || 0) + (offs[o] || 0);
+                        if (!byOffer[o]) byOffer[o] = {offer:o, conv:0, amount:0, tpls:{}};
+                        byOffer[o].tpls[t.code] = 1;
+                        if (!tplAgg[t.code]) tplAgg[t.code] = {conv:0, amount:0, offers:{}};
+                        tplAgg[t.code].offers[o] = 1;
+                    });
+                });
+            }
+            var list = Object.keys(byOffer).map(function(k){
+                var x = byOffer[k];
+                x.ops = opsByOffer[x.offer] || 0;
+                x.avg = x.conv > 0 ? x.amount / x.conv : 0;
+                x.tplList = Object.keys(x.tpls);
+                return x;
+            }).sort(function(a, b){ return b.amount - a.amount; });
+            if (_buyFilter !== '全部') list = list.filter(function(x){ return x.tplList.indexOf(_buyFilter) >= 0; });
+            var ta = 0, tc = 0, to = 0;
+            list.forEach(function(x){ ta += x.amount; tc += x.conv; to += x.ops; });
+            document.getElementById('bcOffers').textContent = list.length;
+            document.getElementById('bcAmount').textContent = formatMoney(ta);
+            document.getElementById('bcConv').textContent = tc;
+            document.getElementById('bcOps').textContent = to;
+            var h = '';
+            list.forEach(function(x){
+                var tags = x.tplList.map(function(c){ return '<span class="bc-tag">' + c + '</span>'; }).join('');
+                h += '<tr><td class="bc-name">' + escBuy(x.offer) + tags + '</td><td class="bc-num">' + x.conv + '</td><td class="bc-num">' + x.ops + '</td>'
+                   + '<td class="bc-num bc-money">' + (x.conv ? formatMoney(x.avg) : '—') + '</td><td class="bc-num bc-money">' + formatMoney(x.amount) + '</td></tr>';
+            });
+            document.getElementById('bcOfferBody').innerHTML = h || '<tr><td colspan="5" class="bc-empty">今日暂无买量转化</td></tr>';
+            var th = '';
+            BUY_TEMPLATES.forEach(function(t){
+                var a = tplAgg[t.code] || {conv:0, amount:0, offers:{}};
+                th += '<tr><td class="bc-name"><span class="bc-dot" style="background:' + t.color + '"></span>' + t.code + '<span class="bc-badge">' + t.label + '</span></td>'
+                    + '<td class="bc-num">' + Object.keys(a.offers).length + '</td><td class="bc-num">' + buyTplOps(t.code) + '</td><td class="bc-num">' + a.conv + '</td><td class="bc-num bc-money">' + formatMoney(a.amount) + '</td></tr>';
+            });
+            document.getElementById('bcTplBody').innerHTML = th;
+            document.getElementById('bcUpdated').textContent = (_buyStats && _buyStats.updated_at) ? ('标记更新 ' + _buyStats.updated_at) : '标记数据加载中';
+        }
         setInterval(function(){
             var pg = document.getElementById('page8');
             if (pg && pg.classList.contains('active')) { loadBuyStats(); renderBuyConv(); }
